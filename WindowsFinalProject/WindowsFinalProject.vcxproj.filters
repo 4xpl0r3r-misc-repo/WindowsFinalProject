@@ -27,9 +27,15 @@
     <ClInclude Include="WindowsFinalProject.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MyHelperFunc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WindowsFinalProject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MyHelperFunc.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -49,6 +55,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="..\..\..\..\程序\winDesign\water256.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="\\vmware-host\Shared Folders\下载\surfboard64.png">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>
