@@ -45,5 +45,11 @@
     <Image Include="WindowsFinalProject.ico">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="..\..\..\..\程序\winDesign\water256.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="..\..\..\..\程序\winDesign\water256.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -151,6 +151,8 @@
     <ResourceCompile Include="WindowsFinalProject.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\..\程序\winDesign\water256.bmp" />
+    <Image Include="..\..\..\..\程序\winDesign\water256.png" />
     <Image Include="small.ico" />
     <Image Include="WindowsFinalProject.ico" />
   </ItemGroup>
