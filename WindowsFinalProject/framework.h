@@ -13,7 +13,16 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
+#include <math.h>
+// C++
+#include <iostream>
+using namespace std;
 // GDI+
 #include <GdiPlus.h>
 using namespace Gdiplus;
 #pragma comment(lib,"gdiplus.lib")
+// Resource
+#include "resource.h"
+
+// public value
+#define BASESPEED  4

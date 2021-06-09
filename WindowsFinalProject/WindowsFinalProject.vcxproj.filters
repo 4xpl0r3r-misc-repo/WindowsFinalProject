@@ -60,5 +60,8 @@
     <Image Include="\\vmware-host\Shared Folders\下载\surfboard64.png">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="..\..\..\..\程序\winDesign\player64.png">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>
