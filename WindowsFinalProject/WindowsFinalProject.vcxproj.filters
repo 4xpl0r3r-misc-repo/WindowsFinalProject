@@ -27,7 +27,10 @@
     <ClInclude Include="WindowsFinalProject.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="MyHelperFunc.h">
+    <ClInclude Include="DrawingFunc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LogicFunc.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,7 +38,10 @@
     <ClCompile Include="WindowsFinalProject.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MyHelperFunc.cpp">
+    <ClCompile Include="DrawingFunc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LogicFunc.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -61,6 +67,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="..\..\..\..\程序\winDesign\player64.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="..\..\..\..\程序\winDesign\objects64.png">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

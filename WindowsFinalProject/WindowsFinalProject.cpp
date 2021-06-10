@@ -1,5 +1,6 @@
 ﻿#include "framework.h"
-#include "MyHelperFunc.h"
+#include "DrawingFunc.h"
+#include "LogicFunc.h"
 
 using namespace Gdiplus;
 
@@ -15,8 +16,17 @@ HDC mainDC, bufDC, bgDC, tmpDC;
 // bgDC		保存背景图的DC
 // tmpDC	首次导入图片使用的临时DC
 Graphics* bufMem;
+// Global Variables
 int status =3;
-double intenalSpeed = BASESPEED;
+double intenalSpeed = 0;
+boolean started = false;
+ULONGLONG frameCount = 0;
+int bgHorizontalPos = 128;
+int bgPos = 0;
+int haveTraveled = 0;
+vector<physicalObj> obstacles;
+int horizontalSpeed = 0;
+int verticalSpeed = 0;
 
 void DrawFrame(HINSTANCE);
 
@@ -39,7 +49,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     wndclass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
     wndclass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-    wndclass.lpszMenuName = NULL;
+    wndclass.lpszMenuName = MAKEINTRESOURCEW(IDC_WINDOWSFINALPROJECT);
     wndclass.lpszClassName = szAppName;
 
     if (!RegisterClass(&wndclass))
@@ -66,6 +76,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     ShowWindow(hwnd, iCmdShow);
     UpdateWindow(hwnd);
     GetClientRect(hwnd, &clientRect);
+    srand((unsigned)time(NULL));
     //全局变量初始化
     //GDI+初始化
     GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL);
@@ -84,6 +95,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     tmpDC = CreateCompatibleDC(mainDC);
     //DC初始化结束
     bufMem = new Graphics(bufDC); //GDI+ Graphics init
+    obstacles = vector<physicalObj>(); // vector init
+    generateObstacles(obstacles, bgHorizontalPos -128 + 512 / 2, 512 / 2 + 512 / 4);//绘制初始地图
+    static long nextGeneratePos = 512 / 2 + 512 / 4;
     //绘制背景bgDC
     HBITMAP bgHBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_BITMAP1));
     SelectObject(tmpDC, bgHBitmap);
@@ -109,6 +123,90 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         if (tNow - tPre >= 40)
         {
             tPre = tNow;
+            frameCount++;
+            // Logic Here
+            if (started) {
+                if (haveTraveled >= nextGeneratePos) {
+                    nextGeneratePos += 512;
+                    static bool displayFlag;
+                    static int count;
+                    if (!displayFlag) {
+                        displayFlag = true;
+                    }
+                    else {
+                        for (int i = count-8; i < count; i++)
+                        {
+                            obstacles[i].displayFlag = true;
+                        }
+                    }
+                    for (int i = 0; i < 8; i++)
+                    {
+                        obstacles[count++].invalidFlag = true;
+                    }
+                    generateObstacles(obstacles, bgHorizontalPos -128 +512/2, 512 / 2 + 512 / 4);
+                }
+                if(intenalSpeed<32)intenalSpeed += 1.0 / 25;//每帧速度+1/25
+                // calc speed for horizon and vertical
+                switch (status)// calc horizontalSpeed and verticalSpeed
+                {
+                case 6:
+                case 0: {
+                    horizontalSpeed = 0;
+                    verticalSpeed = 0;
+                }break;
+                case 1: { //左偏45度
+                    horizontalSpeed = (int)(-sin(getRadian(45)) * intenalSpeed - 0.5);
+                    verticalSpeed = (int)(cos(getRadian(45)) * intenalSpeed + 0.5);
+                }break;
+                case 2: { //左偏30度
+                    horizontalSpeed = (int)(-sin(getRadian(30)) * intenalSpeed - 0.5);
+                    verticalSpeed = (int)(cos(getRadian(30)) * intenalSpeed + 0.5);
+                }break;
+                case 9:
+                case 3: { //直行
+                    horizontalSpeed = 0;
+                    verticalSpeed = (int)(intenalSpeed + 0.5);
+                }break;
+
+                case 4: { //右偏30度
+                    horizontalSpeed = (int)(sin(getRadian(30)) * intenalSpeed + 0.5);
+                    verticalSpeed = (int)(cos(getRadian(30)) * intenalSpeed + 0.5);
+                }break;
+                case 5: { //右偏45度
+                    horizontalSpeed = (int)(sin(getRadian(45)) * intenalSpeed + 0.5);
+                    verticalSpeed = (int)(cos(getRadian(45)) * intenalSpeed + 0.5);
+                }break;
+                default:
+                    break;
+                }
+                // calc speed for horizon and vertical finished
+                haveTraveled += verticalSpeed;
+                bgPos += verticalSpeed;
+                bgHorizontalPos += horizontalSpeed;
+                for (auto it = obstacles.begin(); it != obstacles.end(); it++)
+                {
+                    it->y -= verticalSpeed;
+                    it->x -= horizontalSpeed;
+                }
+                // 背景溢出补偿
+                bgPos %= 128;
+                if (bgHorizontalPos < 0) {
+                    bgHorizontalPos += 128;
+                }
+                else if (bgHorizontalPos > 256) {
+                    bgHorizontalPos -= 128;
+                }
+                // 背景溢出补偿结束
+                //检查碰撞
+                physicalObj player = { 256, 128 ,16};
+                for (auto it = obstacles.begin(); it != obstacles.end(); it++)
+                {
+                    if (!it->displayFlag && checkCollision(*it, player)) { // 正方形空间
+                        status = 6;
+                        break;
+                    }
+                }
+            }
             DrawFrame(hInstance);
         }
     }
@@ -122,59 +220,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 void DrawFrame(HINSTANCE hInstance)
 {
-    static long frameCount = 0;
-    frameCount++;
-    int horizontalSpeed =0;
-    int verticalSpeed =0;
-    static int bgHorizontalPos = 128;
-    static int bgPos = 0;
-    static int haveTraveled = 0;
-    switch (status)// calc horizontalSpeed and verticalSpeed
-    {
-    case 6:
-    case 0: {
-        horizontalSpeed = 0;
-        verticalSpeed = 0;
-    }break;
-    case 1: { //左偏45度
-        horizontalSpeed = (int)(-sin(getRadian(45)) * intenalSpeed - 0.5);
-        verticalSpeed = (int)(cos(getRadian(45)) * intenalSpeed+0.5);
-    }break;
-    case 2: { //左偏30度
-        horizontalSpeed = (int)(-sin(getRadian(30)) * intenalSpeed - 0.5);
-        verticalSpeed = (int)(cos(getRadian(30)) * intenalSpeed+0.5);
-    }break;
-    case 9:
-    case 3: { //直行
-        horizontalSpeed = 0;
-        verticalSpeed = (int)(intenalSpeed+0.5);
-    }break;
-
-    case 4: { //右偏30度
-        horizontalSpeed = (int)(sin(getRadian(30)) * intenalSpeed+0.5);
-        verticalSpeed = (int)(cos(getRadian(30)) * intenalSpeed+0.5);
-    }break;
-    case 5: { //右偏45度
-        horizontalSpeed = (int)(sin(getRadian(45)) * intenalSpeed+0.5);
-        verticalSpeed = (int)(cos(getRadian(45)) * intenalSpeed+0.5);
-    }break;
-    default:
-        break;
-    }
-    haveTraveled += verticalSpeed;
-    bgPos += verticalSpeed;
-    bgHorizontalPos += horizontalSpeed;
-    // 背景溢出补偿
-    bgPos %= 128;
-    if (bgHorizontalPos < 0) {
-        bgHorizontalPos += 128;
-    }
-    else if (bgHorizontalPos>256) {
-        bgHorizontalPos -= 128;
-    }
-    // 背景溢出补偿结束
     BitBlt(bufDC, 0, 0, 512, 512, bgDC, bgHorizontalPos, bgPos, SRCCOPY); //绘制背景
-
+    DrawObstacles(hInstance, bufMem, obstacles);//绘制障碍物
     //最后绘制角色
     DrawSurfboard(hInstance, bufMem, status, frameCount%3);
     DrawPlayer(hInstance, bufMem, status);
@@ -182,7 +229,17 @@ void DrawFrame(HINSTANCE hInstance)
     WCHAR scoreBuffer[256];
     swprintf(scoreBuffer, sizeof(scoreBuffer) / sizeof(*scoreBuffer), L"%d米", haveTraveled/ BASESPEED);
     RECT scoreRect{0,0,512,40};
+    HFONT hF = (HFONT)GetStockObject(SYSTEM_FONT);
+    SelectObject(bufDC, hF);
     DrawText(bufDC, scoreBuffer, lstrlenW(scoreBuffer), &scoreRect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+    DeleteObject(hF);
+    if (status ==6) {
+        scoreRect = {0,256-40,512,256+40};
+        HFONT endFont = CreateFont(40, 20, 0, 0, FW_HEAVY, 0, 0, 0, GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"等线");
+        SelectObject(bufDC, endFont);
+        DrawText(bufDC, L"游戏结束", lstrlenW(L"游戏结束"), &scoreRect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+        DeleteObject(endFont);
+    }
     BitBlt(mainDC, 0, 0, 512, 512, bufDC, 0, 0, SRCCOPY); //最终显示到屏幕上
 }
 
@@ -196,6 +253,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         // 分析菜单选择:
         switch (wmId)
         {
+        case ID_PLAT: {
+            started = true;
+            intenalSpeed = BASESPEED;
+        }break;
+        case ID_REPLAY: {
+            if (status!=6) {
+                MessageBox(hWnd, L"尚未进行过游戏，请先玩一局游戏再看回放",L"提示", MB_OK);
+            }
+            //TODO
+        }break;
         case IDM_EXIT:
             DestroyWindow(hWnd);
             break;
@@ -206,6 +273,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     break;
     case WM_KEYDOWN:
     {
+        if (!started||status ==6)break;
         switch (wParam) {
         case VK_UP: {
             intenalSpeed = 0;

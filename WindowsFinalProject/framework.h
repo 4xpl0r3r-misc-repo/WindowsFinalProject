@@ -14,8 +14,10 @@
 #include <memory.h>
 #include <tchar.h>
 #include <math.h>
+#include <time.h>
 // C++
 #include <iostream>
+#include <vector>
 using namespace std;
 // GDI+
 #include <GdiPlus.h>

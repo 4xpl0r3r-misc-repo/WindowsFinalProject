@@ -139,19 +139,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
-    <ClInclude Include="MyHelperFunc.h" />
+    <ClInclude Include="DrawingFunc.h" />
+    <ClInclude Include="LogicFunc.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="WindowsFinalProject.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MyHelperFunc.cpp" />
+    <ClCompile Include="DrawingFunc.cpp" />
+    <ClCompile Include="LogicFunc.cpp" />
     <ClCompile Include="WindowsFinalProject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsFinalProject.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\..\程序\winDesign\objects64.png" />
     <Image Include="..\..\..\..\程序\winDesign\player64.png" />
     <Image Include="..\..\..\..\程序\winDesign\water256.bmp" />
     <Image Include="..\..\..\..\程序\winDesign\water256.png" />
