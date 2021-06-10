@@ -236,7 +236,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                         it->invalidFlag = true;
                     }
                     haveTraveled = 0;
-                    for (int i = 0; i < 4; i++)
+                    for (int i = 0; i < 8; i++)
                     {
                         obstacles[i].displayFlag = false;
                         obstacles[i].invalidFlag = false;
@@ -246,13 +246,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                 }
                 //画出需要展示的障碍物即可，无需检查碰撞，使用record即可
                 int enabled = haveTraveled / 512;
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < 8; i++)
                 {
-                    obstacles[(enabled + 1) * 4 + i].displayFlag = false;
-                    if (enabled - 1 >= 0) {
-                        obstacles[(enabled - 1) * 4 + i].displayFlag = true;
+                    obstacles[(enabled + 1) * 8 + i].displayFlag = false;
+                    if (enabled - 2 >= 0) {
+                        obstacles[(enabled - 2) * 8 + i].displayFlag = true;
                     }
                 }
+                moveLogic();
                 static int index = 0;
                 if (records[index].frameId==frameCount) {
                     status = records[index].status;
@@ -275,7 +276,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                         haveTraveled = haveTraveledConst;
                     }
                 }
-                moveLogic();
             }
             DrawFrame(hInstance);
         }
