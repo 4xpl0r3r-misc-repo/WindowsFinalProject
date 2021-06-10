@@ -223,6 +223,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             }
             else if (replayFlag) {
                 static bool resetOnceFlag;
+                static int haveTraveledConst = haveTraveled;
                 if (!resetOnceFlag) {
                     resetOnceFlag = true;
                     // 还原障碍物们
@@ -271,6 +272,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                     }
                     if (status == 6) {
                         replayFlag = 0;
+                        haveTraveled = haveTraveledConst;
                     }
                 }
                 moveLogic();
