@@ -14,6 +14,11 @@ struct physicalObj
 	int display[4];
 };
 
+struct operateRecord {
+	ULONGLONG frameId;
+	int status;
+};
+
 double getRadian(int angle);
 bool checkCollision(physicalObj a, physicalObj b);
 void generateObstacles(vector<physicalObj>& obstacles, int baseX, int baseY);

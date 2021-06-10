@@ -18,7 +18,7 @@ HDC mainDC, bufDC, bgDC, tmpDC;
 Graphics* bufMem;
 // Global Variables
 int status =3;
-double intenalSpeed = 0;
+double internalSpeed = 0;
 boolean started = false;
 ULONGLONG frameCount = 0;
 int bgHorizontalPos = 128;
@@ -27,8 +27,67 @@ int haveTraveled = 0;
 vector<physicalObj> obstacles;
 int horizontalSpeed = 0;
 int verticalSpeed = 0;
+bool replayFlag;
+int xMoved = 0;
+vector<operateRecord> records;
 
 void DrawFrame(HINSTANCE);
+
+
+void moveLogic() {
+    if (internalSpeed < 32)internalSpeed += 1.0 / 25;//每帧速度+1/25
+    switch (status)// calc horizontalSpeed and verticalSpeed
+    {
+    case 6:
+    case 0: {
+        horizontalSpeed = 0;
+        verticalSpeed = 0;
+    }break;
+    case 1: { //左偏45度
+        horizontalSpeed = (int)(-sin(getRadian(45)) * internalSpeed - 0.5);
+        verticalSpeed = (int)(cos(getRadian(45)) * internalSpeed + 0.5);
+    }break;
+    case 2: { //左偏30度
+        horizontalSpeed = (int)(-sin(getRadian(30)) * internalSpeed - 0.5);
+        verticalSpeed = (int)(cos(getRadian(30)) * internalSpeed + 0.5);
+    }break;
+    case 9:
+    case 3: { //直行
+        horizontalSpeed = 0;
+        verticalSpeed = (int)(internalSpeed + 0.5);
+    }break;
+
+    case 4: { //右偏30度
+        horizontalSpeed = (int)(sin(getRadian(30)) * internalSpeed + 0.5);
+        verticalSpeed = (int)(cos(getRadian(30)) * internalSpeed + 0.5);
+    }break;
+    case 5: { //右偏45度
+        horizontalSpeed = (int)(sin(getRadian(45)) * internalSpeed + 0.5);
+        verticalSpeed = (int)(cos(getRadian(45)) * internalSpeed + 0.5);
+    }break;
+    default:
+        break;
+    }
+    // calc speed for horizon and vertical finished
+    haveTraveled += verticalSpeed;
+    xMoved += horizontalSpeed;
+    bgPos += verticalSpeed;
+    bgHorizontalPos += horizontalSpeed;
+    for (auto it = obstacles.begin(); it != obstacles.end(); it++)
+    {
+        it->y -= verticalSpeed;
+        it->x -= horizontalSpeed;
+    }
+    // 背景溢出补偿
+    bgPos %= 128;
+    if (bgHorizontalPos < 0) {
+        bgHorizontalPos += 128;
+    }
+    else if (bgHorizontalPos > 256) {
+        bgHorizontalPos -= 128;
+    }
+    // 背景溢出补偿结束
+}
 
 //兼容MFC，使用wWinMain
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -59,7 +118,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return 0;
     }
     hwnd = CreateWindow(szAppName,
-        L"The Windows Program",
+        L"冲浪",
         WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME, //锁定窗口大小
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -98,6 +157,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     obstacles = vector<physicalObj>(); // vector init
     generateObstacles(obstacles, bgHorizontalPos -128 + 512 / 2, 512 / 2 + 512 / 4);//绘制初始地图
     static long nextGeneratePos = 512 / 2 + 512 / 4;
+    records = vector<operateRecord>();
     //绘制背景bgDC
     HBITMAP bgHBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_BITMAP1));
     SelectObject(tmpDC, bgHBitmap);
@@ -145,67 +205,75 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                     }
                     generateObstacles(obstacles, bgHorizontalPos -128 +512/2, 512 / 2 + 512 / 4);
                 }
-                if(intenalSpeed<32)intenalSpeed += 1.0 / 25;//每帧速度+1/25
-                // calc speed for horizon and vertical
-                switch (status)// calc horizontalSpeed and verticalSpeed
-                {
-                case 6:
-                case 0: {
-                    horizontalSpeed = 0;
-                    verticalSpeed = 0;
-                }break;
-                case 1: { //左偏45度
-                    horizontalSpeed = (int)(-sin(getRadian(45)) * intenalSpeed - 0.5);
-                    verticalSpeed = (int)(cos(getRadian(45)) * intenalSpeed + 0.5);
-                }break;
-                case 2: { //左偏30度
-                    horizontalSpeed = (int)(-sin(getRadian(30)) * intenalSpeed - 0.5);
-                    verticalSpeed = (int)(cos(getRadian(30)) * intenalSpeed + 0.5);
-                }break;
-                case 9:
-                case 3: { //直行
-                    horizontalSpeed = 0;
-                    verticalSpeed = (int)(intenalSpeed + 0.5);
-                }break;
-
-                case 4: { //右偏30度
-                    horizontalSpeed = (int)(sin(getRadian(30)) * intenalSpeed + 0.5);
-                    verticalSpeed = (int)(cos(getRadian(30)) * intenalSpeed + 0.5);
-                }break;
-                case 5: { //右偏45度
-                    horizontalSpeed = (int)(sin(getRadian(45)) * intenalSpeed + 0.5);
-                    verticalSpeed = (int)(cos(getRadian(45)) * intenalSpeed + 0.5);
-                }break;
-                default:
-                    break;
-                }
-                // calc speed for horizon and vertical finished
-                haveTraveled += verticalSpeed;
-                bgPos += verticalSpeed;
-                bgHorizontalPos += horizontalSpeed;
-                for (auto it = obstacles.begin(); it != obstacles.end(); it++)
-                {
-                    it->y -= verticalSpeed;
-                    it->x -= horizontalSpeed;
-                }
-                // 背景溢出补偿
-                bgPos %= 128;
-                if (bgHorizontalPos < 0) {
-                    bgHorizontalPos += 128;
-                }
-                else if (bgHorizontalPos > 256) {
-                    bgHorizontalPos -= 128;
-                }
-                // 背景溢出补偿结束
+                moveLogic();
                 //检查碰撞
                 physicalObj player = { 256, 128 ,16};
                 for (auto it = obstacles.begin(); it != obstacles.end(); it++)
                 {
                     if (!it->displayFlag && checkCollision(*it, player)) { // 正方形空间
                         status = 6;
+                        static bool onceFlag;
+                        if (!onceFlag) {
+                            onceFlag = true;
+                            records.push_back(operateRecord{ frameCount,6 });
+                        }
                         break;
                     }
                 }
+            }
+            else if (replayFlag) {
+                static bool resetOnceFlag;
+                if (!resetOnceFlag) {
+                    resetOnceFlag = true;
+                    // 还原障碍物们
+                    for (auto it = obstacles.begin(); it != obstacles.end(); it++)
+                    {
+                        it->y += haveTraveled;
+                        it->x += xMoved;
+                        //默认全部关闭
+                        it->displayFlag = true;
+                        it->invalidFlag = true;
+                    }
+                    haveTraveled = 0;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        obstacles[i].displayFlag = false;
+                        obstacles[i].invalidFlag = false;
+                    }
+                    status = 3;
+                    internalSpeed = BASESPEED;
+                }
+                //画出需要展示的障碍物即可，无需检查碰撞，使用record即可
+                int enabled = haveTraveled / 512;
+                for (int i = 0; i < 4; i++)
+                {
+                    obstacles[(enabled + 1) * 4 + i].displayFlag = false;
+                    if (enabled - 1 >= 0) {
+                        obstacles[(enabled - 1) * 4 + i].displayFlag = true;
+                    }
+                }
+                static int index = 0;
+                if (records[index].frameId==frameCount) {
+                    status = records[index].status;
+                    index++;
+                    switch (status)
+                    {
+                    case 0:
+                        internalSpeed = 0;
+                        break;
+                    case 3:
+                        if ((int)internalSpeed == 0) {
+                            internalSpeed = BASESPEED;
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                    if (status == 6) {
+                        replayFlag = 0;
+                    }
+                }
+                moveLogic();
             }
             DrawFrame(hInstance);
         }
@@ -233,7 +301,7 @@ void DrawFrame(HINSTANCE hInstance)
     SelectObject(bufDC, hF);
     DrawText(bufDC, scoreBuffer, lstrlenW(scoreBuffer), &scoreRect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
     DeleteObject(hF);
-    if (status ==6) {
+    if (status ==6 && !replayFlag) {
         scoreRect = {0,256-40,512,256+40};
         HFONT endFont = CreateFont(40, 20, 0, 0, FW_HEAVY, 0, 0, 0, GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"等线");
         SelectObject(bufDC, endFont);
@@ -254,14 +322,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (wmId)
         {
         case ID_PLAT: {
+            frameCount = 0;
             started = true;
-            intenalSpeed = BASESPEED;
+            internalSpeed = BASESPEED;
         }break;
         case ID_REPLAY: {
             if (status!=6) {
                 MessageBox(hWnd, L"尚未进行过游戏，请先玩一局游戏再看回放",L"提示", MB_OK);
             }
-            //TODO
+            started = 0;//防止进入游戏逻辑
+            replayFlag = true;
+            frameCount = 0;
         }break;
         case IDM_EXIT:
             DestroyWindow(hWnd);
@@ -276,8 +347,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (!started||status ==6)break;
         switch (wParam) {
         case VK_UP: {
-            intenalSpeed = 0;
+            internalSpeed = 0;
             status = 0;
+            records.push_back(operateRecord{ frameCount,0 });
         }break;
         case VK_LEFT: {
             if (status==0 || status == 1) {
@@ -285,9 +357,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             else if (status!=2) {
                 status = 2;
+                records.push_back(operateRecord{ frameCount,2 });
             }
             else {
                 status = 1;
+                records.push_back(operateRecord{ frameCount,1 });
             }
         }break;
 
@@ -297,15 +371,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             else if (status != 4) {
                 status = 4;
+                records.push_back(operateRecord{ frameCount,4 });
             }
             else {
                 status = 5;
+                records.push_back(operateRecord{ frameCount,5 });
             }
         }break;
         case VK_DOWN: {
             status = 3;
-            if ((int)intenalSpeed == 0) {
-                intenalSpeed = BASESPEED;
+            records.push_back(operateRecord{ frameCount,3 });
+            if ((int)internalSpeed == 0) {
+                internalSpeed = BASESPEED;
             }
         }break;
         }
